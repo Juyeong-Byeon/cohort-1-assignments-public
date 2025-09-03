@@ -28,6 +28,12 @@
 
 :80 {
     import cors
+
+    handle /deployment {
+        uri strip_prefix /deployment
+        root /workspace
+        file_server
+    }
     
     handle /deployment.json {
         reverse_proxy sc-deployment-server:80

@@ -8,6 +8,7 @@ services:
       - "8080:80"
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./sc-deployer:/srv
     depends_on:
       - geth
     networks:
@@ -43,10 +44,10 @@ services:
     image: ethereum/client-go:v1.15.0
     container_name: geth
     ports:
-      - "8545:8545"  # HTTP RPC
-      - "8546:8546"  # WebSocket RPC
-      - "30303:30303"  # P2P
-      - "30303:30303/udp"  # P2P UDP
+      - "8545:8545" # HTTP RPC
+      - "8546:8546" # WebSocket RPC
+      - "30303:30303" # P2P
+      - "30303:30303/udp" # P2P UDP
     volumes:
       - geth-data:/root/.ethereum
       - ./geth:/geth
