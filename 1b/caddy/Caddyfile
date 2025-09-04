@@ -31,7 +31,7 @@
 
     handle /deployment {
         uri strip_prefix /deployment
-        root /workspace
+        root * /workspace
         file_server
     }
     
@@ -42,6 +42,11 @@
     handle /rpc* {
         uri strip_prefix /rpc
         reverse_proxy geth:8545
+    }
+    
+    handle /graph-playground* {
+        uri strip_prefix /graph-playground
+        reverse_proxy graph-node:8000 
     }
     
     handle {
