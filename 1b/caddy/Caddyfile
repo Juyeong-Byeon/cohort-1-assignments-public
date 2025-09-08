@@ -48,6 +48,31 @@
         uri strip_prefix /graph-playground
         reverse_proxy graph-node:8000 
     }
+
+    handle /explorer* {
+        uri strip_prefix /explorer
+        reverse_proxy proxy:80
+    }
+    
+    handle /assets* {
+        reverse_proxy proxy:80
+    }
+    
+    handle /static* {
+        reverse_proxy proxy:80
+    }
+    
+    handle /icons* {
+        reverse_proxy proxy:80
+    }
+    
+    handle /_next* {
+        reverse_proxy proxy:80
+    }
+    
+    handle /api* {
+        reverse_proxy proxy:80
+    }
     
     handle {
         reverse_proxy geth:8545
