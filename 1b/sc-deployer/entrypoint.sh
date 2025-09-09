@@ -19,7 +19,7 @@ rm -rf /workspace/cohort-1-assignments-public
 cd /workspace
 
 echo "📥 Cloning repository..."
-git clone https://github.com/9oelm/cohort-1-assignments-public.git
+git clone --recurse-submodules https://github.com/Juyeong-Byeon/cohort-1-assignments-public.git
 cd cohort-1-assignments-public
 
 # Navigate to the 1a directory
@@ -27,7 +27,7 @@ cd 1a
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-forge install
+# Skip forge install since submodules are already cloned
 
 # Build the project
 echo "🔨 Building project..."
