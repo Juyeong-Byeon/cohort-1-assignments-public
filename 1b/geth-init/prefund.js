@@ -4,5 +4,7 @@ eth.sendTransaction({
   from: from,
   to: contractDeployer,
   value: web3.toWei(100, "ether"),
+  gas: 21000,
+  gasPrice: web3.toWei(2, "gwei"),
 });
 // PK: be44593f36ac74d23ed0e80569b672ac08fa963ede14b63a967d92739b0c8659

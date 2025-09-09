@@ -30,9 +30,7 @@
     import cors
 
     handle /deployment {
-        uri strip_prefix /deployment
-        root * /workspace
-        file_server
+       reverse_proxy sc-deployment-server:80
     }
     
     handle /deployment.json {
