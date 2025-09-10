@@ -16,11 +16,13 @@ contract MiniAMMFactory is IMiniAMMFactory {
     
     // implement
     function allPairsLength() external view returns (uint256) {
-        return 0;
+        return allPairs.length;
     }
     
     // implement
     function createPair(address tokenA, address tokenB) external returns (address pair) {
-        return address(0);
+        MiniAMM miniAMM = new MiniAMM(tokenA, tokenB);
+        getPair[tokenA][tokenB] = address(miniAMM);
+        return address(miniAMM);
     }
 }
