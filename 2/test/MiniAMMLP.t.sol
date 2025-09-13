@@ -9,7 +9,7 @@ contract MiniAMMLPTest is Test {
     MiniAMM public miniAMM;
     MockERC20 public token0;
     MockERC20 public token1;
-    
+
     address public alice = address(0x1);
 
     function setUp() public {
