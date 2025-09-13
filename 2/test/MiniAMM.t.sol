@@ -155,13 +155,13 @@ contract MiniAMMTest is Test {
 
         // Now remove half of the liquidity
         uint256 lpToRemove = lpTokens / 2;
-        
+
         vm.startPrank(alice);
 
         // Get actual token addresses from miniAMM (they might be reordered)
         address tokenX = miniAMM.tokenX();
         address tokenY = miniAMM.tokenY();
-        
+
         uint256 aliceTokenXBefore = IERC20(tokenX).balanceOf(alice);
         uint256 aliceTokenYBefore = IERC20(tokenY).balanceOf(alice);
 
@@ -226,7 +226,7 @@ contract MiniAMMTest is Test {
 
         // Determine which token will be received
         address tokenY = miniAMM.tokenY();
-        
+
         uint256 bobTokenYBefore = IERC20(tokenY).balanceOf(bob);
 
         miniAMM.swap(xSwap, 0);
@@ -253,26 +253,25 @@ contract MiniAMMTest is Test {
 
         // Perform multiple swaps to accumulate fees
         vm.startPrank(bob);
-        
-        for (uint i = 0; i < 10; i++) {
+
+        for (uint256 i = 0; i < 10; i++) {
             miniAMM.swap(10 * 10 ** 18, 0); // Swap X for Y
             miniAMM.swap(0, 10 * 10 ** 18); // Swap Y for X
         }
-        
+
         vm.stopPrank();
 
         // Alice removes liquidity and should get more than she put in due to fees
         vm.startPrank(alice);
-        
+
         (uint256 xOut, uint256 yOut) = miniAMM.removeLiquidity(aliceLPTokens);
-        
+
         // Due to swap fees, Alice should get back slightly less due to slippage
         // But overall should be close to what she put in (swap fees benefit her as LP)
         assertGt(xOut + yOut, (xInitial + yInitial) * 98 / 100); // Allow 2% slippage tolerance
 
         vm.stopPrank();
     }
-
 
     function test_SwapRevertNoLiquidity() public {
         vm.expectRevert("No liquidity in pool");

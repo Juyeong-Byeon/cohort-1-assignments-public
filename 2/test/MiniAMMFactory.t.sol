@@ -37,11 +37,11 @@ contract MiniAMMFactoryTest is Test {
 
         // Check pair has correct configuration
         MiniAMM pairContract = MiniAMM(pair);
-        
+
         // Tokens should be ordered (tokenX < tokenY)
         address expectedTokenX = address(token0) < address(token1) ? address(token0) : address(token1);
         address expectedTokenY = address(token0) < address(token1) ? address(token1) : address(token0);
-        
+
         assertEq(pairContract.tokenX(), expectedTokenX);
         assertEq(pairContract.tokenY(), expectedTokenY);
     }
@@ -106,11 +106,11 @@ contract MiniAMMFactoryTest is Test {
         MockERC20 tokenB = new MockERC20("Token B", "TKB");
 
         address pair1 = factory.createPair(address(tokenA), address(tokenB));
-        
+
         // Verify that getPair works both ways (should return same pair)
         assertEq(factory.getPair(address(tokenA), address(tokenB)), pair1);
         assertEq(factory.getPair(address(tokenB), address(tokenA)), pair1);
-        
+
         // Creating the same pair in reverse order should revert since pair already exists
         vm.expectRevert("Pair exists");
         factory.createPair(address(tokenB), address(tokenA));
@@ -142,12 +142,12 @@ contract MiniAMMFactoryTest is Test {
 
         vm.expectEmit(true, true, false, false);
         emit PairCreated(expectedToken0_1, expectedToken1_1, address(0), 1);
-        
+
         address pair1 = factory.createPair(address(token0), address(token1));
 
         // Create second pair with new token
         MockERC20 token2 = new MockERC20("Token C", "TKC");
-        
+
         address expectedToken0_2 = address(token0) < address(token2) ? address(token0) : address(token2);
         address expectedToken1_2 = address(token0) < address(token2) ? address(token2) : address(token0);
 
