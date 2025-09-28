@@ -114,6 +114,14 @@ contract MiniAMM is IMiniAMM, IMiniAMMEvents, MiniAMMLP {
         xReserve -= xAmount;
         yReserve -= yAmount;
 
+        // Update k value after removing liquidity
+        // If reserves are 0, k should also be 0
+        if (xReserve == 0 || yReserve == 0) {
+            k = 0;
+        } else {
+            k = xReserve * yReserve;
+        }
+
         _burnLP(msg.sender, lpAmount);
         IERC20(tokenX).transfer(msg.sender, xAmount);
         IERC20(tokenY).transfer(msg.sender, yAmount);

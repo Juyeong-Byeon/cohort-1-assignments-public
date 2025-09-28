@@ -18,11 +18,11 @@ contract MiniAMMTest is Test {
     address public charlie = address(0x3);
 
     // Fork testing addresses from broadcast
-    address constant FACTORY_ADDRESS = 0x4a9bbD62A8827117eE3391e9D8055d3D46a1A2E0;
-    address constant TOKEN1_ADDRESS = 0xFce9D7A78e11a22f465623f3295a8c52A0fb78b5;
-    address constant TOKEN2_ADDRESS = 0x472fFfB3d09c29B29D25dC5600cb570cAb8A4206;
-    address constant PAIR_ADDRESS = 0x01bfd0C9DA99536266a8df1CB1D039667A858b05;
-    uint256 constant FORK_BLOCK = 0x14dec00; // Block number from broadcast
+    address constant FACTORY_ADDRESS = 0xd42E03207bDCDCbc96d74865BcCf75e36AF12Bbd;
+    address constant TOKEN1_ADDRESS = 0x8f14A50E3525B1dE66C42573D61b5c011a90758B;
+    address constant TOKEN2_ADDRESS = 0x90d993a22a675f5aC776e107D85Fa4cE296D7D07;
+    address constant PAIR_ADDRESS = 0x073cD9DcB5F1bEAD3b4296Cc971BF15f805482a4;
+    uint256 constant FORK_BLOCK = 22376567; // Block number from broadcast
 
     // Import events
     event AddLiquidity(uint256 xAmountIn, uint256 yAmountIn);
@@ -201,6 +201,11 @@ contract MiniAMMTest is Test {
         vm.prank(alice);
         uint256 lpTokens = miniAMM.addLiquidity(xAmount, yAmount);
 
+        // Check initial state
+        assertTrue(miniAMM.k() > 0);
+        assertTrue(miniAMM.xReserve() > 0);
+        assertTrue(miniAMM.yReserve() > 0);
+
         // Remove all liquidity
         vm.startPrank(alice);
 
@@ -212,6 +217,16 @@ contract MiniAMMTest is Test {
         // Check that all tokens were returned (exact amounts since removing 100% of liquidity)
         assertEq(xOut, xAmount);
         assertEq(yOut, yAmount);
+
+        // Check that k is reset to 0 when pool is empty
+        console.log("After removing all liquidity:");
+        console.log("k:", miniAMM.k());
+        console.log("xReserve:", miniAMM.xReserve());
+        console.log("yReserve:", miniAMM.yReserve());
+        
+        assertEq(miniAMM.k(), 0);
+        assertEq(miniAMM.xReserve(), 0);
+        assertEq(miniAMM.yReserve(), 0);
 
         vm.stopPrank();
     }
@@ -391,6 +406,239 @@ contract MiniAMMTest is Test {
 
         vm.prank(bob);
         miniAMM.swap(xSwap, 0);
+    }
+
+    function test_AddLiquiditySpecificCase_MCT2_1000_MCT1_100() public {
+        // Test the specific case: MCT2 1000, MCT1 100
+        // First check which token is which in the deployed contract
+        address tokenX = miniAMM.tokenX();
+        address tokenY = miniAMM.tokenY();
+        
+        // Determine which token is MCT1 and which is MCT2
+        MockERC20 mct1Token = tokenX == address(token0) ? token0 : token1;
+        MockERC20 mct2Token = tokenX == address(token0) ? token1 : token0;
+        
+        uint256 mct1Amount = 100 * 10 ** 18;  // 100 MCT1
+        uint256 mct2Amount = 1000 * 10 ** 18; // 1000 MCT2
+        
+        vm.startPrank(alice);
+        
+        // Check if this is first time adding liquidity (k == 0)
+        if (miniAMM.k() == 0) {
+            // First time adding liquidity - can set any ratio
+            console.log("First time adding liquidity - k = 0");
+            console.log("MCT1 amount:", mct1Amount);
+            console.log("MCT2 amount:", mct2Amount);
+            
+            uint256 lpMinted = miniAMM.addLiquidity(
+                tokenX == address(mct1Token) ? mct1Amount : mct2Amount,
+                tokenY == address(mct1Token) ? mct1Amount : mct2Amount
+            );
+            
+            console.log("LP tokens minted:", lpMinted);
+            console.log("New k value:", miniAMM.k());
+            console.log("New xReserve:", miniAMM.xReserve());
+            console.log("New yReserve:", miniAMM.yReserve());
+            
+            // Verify the transaction succeeded
+            assertTrue(lpMinted > 0);
+            assertEq(miniAMM.balanceOf(alice), lpMinted);
+            assertEq(miniAMM.k(), miniAMM.xReserve() * miniAMM.yReserve());
+            
+        } else {
+            // Pool already has liquidity - need to maintain exact ratio
+            console.log("Pool already has liquidity - k =", miniAMM.k());
+            console.log("Current xReserve:", miniAMM.xReserve());
+            console.log("Current yReserve:", miniAMM.yReserve());
+            
+            // Calculate required amounts to maintain ratio
+            uint256 xReserve = miniAMM.xReserve();
+            uint256 yReserve = miniAMM.yReserve();
+            
+            // Calculate what we need to add based on current reserves
+            uint256 xAmountToAdd = tokenX == address(mct1Token) ? mct1Amount : mct2Amount;
+            uint256 yRequired = (xAmountToAdd * yReserve) / xReserve;
+            
+            console.log("X amount to add:", xAmountToAdd);
+            console.log("Y amount required:", yRequired);
+            
+            // Check if we have enough tokens
+            uint256 aliceXBalance = IERC20(tokenX).balanceOf(alice);
+            uint256 aliceYBalance = IERC20(tokenY).balanceOf(alice);
+            
+            console.log("Alice X balance:", aliceXBalance);
+            console.log("Alice Y balance:", aliceYBalance);
+            
+            if (aliceXBalance >= xAmountToAdd && aliceYBalance >= yRequired) {
+                uint256 lpMinted = miniAMM.addLiquidity(xAmountToAdd, yRequired);
+                console.log("LP tokens minted:", lpMinted);
+                assertTrue(lpMinted > 0);
+            } else {
+                console.log("Insufficient token balance for this ratio");
+                // This might be why the transaction is failing
+                assertTrue(false, "Insufficient balance for required ratio");
+            }
+        }
+        
+        vm.stopPrank();
+    }
+
+    function test_AddLiquidityAfterInitial_MCT2_1000_MCT1_100() public {
+        // First add initial liquidity
+        address tokenX = miniAMM.tokenX();
+        address tokenY = miniAMM.tokenY();
+        
+        uint256 initialMct1Amount = 50 * 10 ** 18;  // 50 MCT1
+        uint256 initialMct2Amount = 500 * 10 ** 18; // 500 MCT2
+        
+        vm.startPrank(alice);
+        
+        // Add initial liquidity
+        uint256 initialLpMinted = miniAMM.addLiquidity(
+            tokenX == address(token0) ? initialMct1Amount : initialMct2Amount,
+            tokenY == address(token0) ? initialMct1Amount : initialMct2Amount
+        );
+        
+        console.log("Initial LP tokens minted:", initialLpMinted);
+        console.log("Initial k value:", miniAMM.k());
+        console.log("Initial xReserve:", miniAMM.xReserve());
+        console.log("Initial yReserve:", miniAMM.yReserve());
+        
+        vm.stopPrank();
+        
+        // Now try to add more liquidity with different amounts
+        uint256 mct1Amount = 100 * 10 ** 18;  // 100 MCT1
+        uint256 mct2Amount = 1000 * 10 ** 18; // 1000 MCT2
+        
+        vm.startPrank(bob);
+        
+        console.log("=== Trying to add more liquidity ===");
+        console.log("MCT1 amount to add:", mct1Amount);
+        console.log("MCT2 amount to add:", mct2Amount);
+        console.log("Current xReserve:", miniAMM.xReserve());
+        console.log("Current yReserve:", miniAMM.yReserve());
+        
+        // Calculate required amounts to maintain ratio
+        uint256 xReserve = miniAMM.xReserve();
+        uint256 yReserve = miniAMM.yReserve();
+        
+        // Calculate what we need to add based on current reserves
+        uint256 xAmountToAdd = tokenX == address(token0) ? mct1Amount : mct2Amount;
+        uint256 yRequired = (xAmountToAdd * yReserve) / xReserve;
+        
+        console.log("X amount to add:", xAmountToAdd);
+        console.log("Y amount required:", yRequired);
+        console.log("Y amount provided:", tokenY == address(token0) ? mct1Amount : mct2Amount);
+        
+        // Check if the provided amounts match the required ratio
+        uint256 yProvided = tokenY == address(token0) ? mct1Amount : mct2Amount;
+        bool ratioMatches = yProvided == yRequired;
+        
+        console.log("Ratio matches:", ratioMatches);
+        
+        if (ratioMatches) {
+            // Try to add liquidity with exact ratio
+            try miniAMM.addLiquidity(xAmountToAdd, yRequired) returns (uint256 lpMinted) {
+                console.log("Success! LP tokens minted:", lpMinted);
+                assertTrue(lpMinted > 0);
+            } catch Error(string memory reason) {
+                console.log("Failed with reason:", reason);
+                assertTrue(false, reason);
+            } catch {
+                console.log("Failed with unknown error");
+                assertTrue(false, "Unknown error occurred");
+            }
+        } else {
+            console.log("Ratio doesn't match - this will fail");
+            vm.expectRevert("invalid yAmountIn");
+            miniAMM.addLiquidity(xAmountToAdd, yProvided);
+        }
+        
+        vm.stopPrank();
+    }
+
+    function test_CheckPoolState() public view {
+        // Check current pool state
+        console.log("=== Current Pool State ===");
+        console.log("k:", miniAMM.k());
+        console.log("xReserve:", miniAMM.xReserve());
+        console.log("yReserve:", miniAMM.yReserve());
+        console.log("tokenX:", miniAMM.tokenX());
+        console.log("tokenY:", miniAMM.tokenY());
+        console.log("totalSupply:", miniAMM.totalSupply());
+        
+        // Check token balances
+        console.log("=== Token Balances ===");
+        console.log("Alice token0 balance:", token0.balanceOf(alice));
+        console.log("Alice token1 balance:", token1.balanceOf(alice));
+        console.log("Alice LP balance:", miniAMM.balanceOf(alice));
+        
+        // Check which token is which
+        address tokenX = miniAMM.tokenX();
+        address tokenY = miniAMM.tokenY();
+        console.log("token0 address:", address(token0));
+        console.log("token1 address:", address(token1));
+        console.log("tokenX == token0:", tokenX == address(token0));
+        console.log("tokenY == token1:", tokenY == address(token1));
+    }
+
+    function test_AddLiquidityCLI_Token2_100_Token1_10() public {
+        // Test adding liquidity: Token2 100, Token1 10
+        address tokenX = miniAMM.tokenX();
+        address tokenY = miniAMM.tokenY();
+        
+        console.log("=== Before Adding Liquidity ===");
+        console.log("k:", miniAMM.k());
+        console.log("xReserve:", miniAMM.xReserve());
+        console.log("yReserve:", miniAMM.yReserve());
+        console.log("tokenX:", tokenX);
+        console.log("tokenY:", tokenY);
+        
+        // Amounts: Token2 100, Token1 10
+        uint256 token2Amount = 100 * 10 ** 18;  // 100 Token2
+        uint256 token1Amount = 10 * 10 ** 18;   // 10 Token1
+        
+        console.log("=== Adding Liquidity ===");
+        console.log("Token2 amount:", token2Amount);
+        console.log("Token1 amount:", token1Amount);
+        
+        vm.startPrank(alice);
+        
+        // Check balances before
+        console.log("Alice Token0 balance before:", token0.balanceOf(alice));
+        console.log("Alice Token1 balance before:", token1.balanceOf(alice));
+        
+        // Add liquidity with correct token order
+        uint256 xAmount = tokenX == address(token0) ? token1Amount : token2Amount;
+        uint256 yAmount = tokenY == address(token0) ? token1Amount : token2Amount;
+        
+        console.log("X amount (tokenX):", xAmount);
+        console.log("Y amount (tokenY):", yAmount);
+        
+        try miniAMM.addLiquidity(xAmount, yAmount) returns (uint256 lpMinted) {
+            console.log("SUCCESS! LP tokens minted:", lpMinted);
+            
+            console.log("=== After Adding Liquidity ===");
+            console.log("k:", miniAMM.k());
+            console.log("xReserve:", miniAMM.xReserve());
+            console.log("yReserve:", miniAMM.yReserve());
+            console.log("totalSupply:", miniAMM.totalSupply());
+            console.log("Alice LP balance:", miniAMM.balanceOf(alice));
+            
+            // Verify the transaction succeeded
+            assertTrue(lpMinted > 0);
+            assertEq(miniAMM.balanceOf(alice), lpMinted);
+            assertEq(miniAMM.k(), miniAMM.xReserve() * miniAMM.yReserve());
+            
+        } catch Error(string memory reason) {
+            console.log("FAILED with reason:", reason);
+            assertTrue(false, reason);
+        } catch {
+            console.log("FAILED with unknown error");
+            assertTrue(false, "Unknown error occurred");
+        }
+        
+        vm.stopPrank();
     }
 
     // Helper function for square root
