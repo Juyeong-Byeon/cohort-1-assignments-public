@@ -64,18 +64,27 @@ export default function SwapPage() {
     address: CONTRACT_ADDRESSES.PAIR,
     abi: MINI_AMM_ABI,
     functionName: "xReserve",
+    query: {
+      refetchInterval: 5000, // Refetch every 5 seconds
+    },
   });
 
   const { data: yReserve } = useReadContract({
     address: CONTRACT_ADDRESSES.PAIR,
     abi: MINI_AMM_ABI,
     functionName: "yReserve",
+    query: {
+      refetchInterval: 5000, // Refetch every 5 seconds
+    },
   });
 
   const { data: k } = useReadContract({
     address: CONTRACT_ADDRESSES.PAIR,
     abi: MINI_AMM_ABI,
     functionName: "k",
+    query: {
+      refetchInterval: 5000, // Refetch every 5 seconds
+    },
   });
 
   const { data: lpBalance } = useReadContract({
@@ -83,6 +92,9 @@ export default function SwapPage() {
     abi: MINI_AMM_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
+    query: {
+      refetchInterval: 5000, // Refetch every 5 seconds
+    },
   });
 
   const { data: token1Balance } = useReadContract({
@@ -90,6 +102,9 @@ export default function SwapPage() {
     abi: MOCK_ERC20_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
+    query: {
+      refetchInterval: 5000, // Refetch every 5 seconds
+    },
   });
 
   const { data: token2Balance } = useReadContract({
@@ -97,6 +112,9 @@ export default function SwapPage() {
     abi: MOCK_ERC20_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
+    query: {
+      refetchInterval: 5000, // Refetch every 5 seconds
+    },
   });
 
   // Determine which token is which
@@ -364,7 +382,7 @@ export default function SwapPage() {
     if (isConfirmed) {
       console.log("✅ Transaction confirmed - refreshing data");
 
-      // Invalidate specific contract queries to refresh data
+      // Invalidate all contract-related queries to ensure complete refresh
       queryClient.invalidateQueries({
         queryKey: [{ address: CONTRACT_ADDRESSES.PAIR }],
       });
@@ -373,6 +391,16 @@ export default function SwapPage() {
       });
       queryClient.invalidateQueries({
         queryKey: [{ address: CONTRACT_ADDRESSES.TOKEN2 }],
+      });
+
+      // Invalidate all wagmi queries to ensure complete refresh
+      queryClient.invalidateQueries({
+        type: "all",
+      });
+
+      // Force refetch all queries
+      queryClient.refetchQueries({
+        type: "all",
       });
 
       // Clear input fields after successful transaction
@@ -419,13 +447,25 @@ export default function SwapPage() {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            MiniAMM DApp
-          </h1>
-          <div className="mb-4">
-            <WalletConnect />
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center relative overflow-hidden">
+        {/* Animated background elements */}
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        ></div>
+        <div className="text-center relative z-10">
+          <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20 shadow-2xl">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-6">
+              MiniAMM DApp
+            </h1>
+            <p className="text-white/80 mb-6 text-lg">
+              Connect your wallet to start trading
+            </p>
+            <div className="mb-4">
+              <WalletConnect />
+            </div>
           </div>
         </div>
       </div>
@@ -433,55 +473,86 @@ export default function SwapPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 py-8 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}
+      ></div>
+      <div className="max-w-4xl mx-auto px-4 relative z-10">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">MiniAMM DApp</h1>
-          <WalletConnect />
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            MiniAMM DApp
+          </h1>
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-2 border border-white/20">
+            <WalletConnect />
+          </div>
         </div>
 
         {/* Pool Information */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Pool Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">
+        <div className="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-8 mb-8 border border-white/20 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-pink-500/10"></div>
+          <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent relative z-10">
+            Pool Information
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+            <div className="bg-gradient-to-br from-cyan-500/20 to-blue-500/20 backdrop-blur-sm p-6 rounded-2xl border border-cyan-400/30 shadow-lg">
+              <p className="text-sm text-cyan-300 font-medium mb-2">
                 Token X ({tokenXInfo.symbol})
               </p>
-              <p className="text-lg font-semibold">{formatBalance(xReserve)}</p>
+              <p className="text-2xl font-bold text-white">
+                {formatBalance(xReserve)}
+              </p>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">
+            <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-sm p-6 rounded-2xl border border-purple-400/30 shadow-lg">
+              <p className="text-sm text-purple-300 font-medium mb-2">
                 Token Y ({tokenYInfo.symbol})
               </p>
-              <p className="text-lg font-semibold">{formatBalance(yReserve)}</p>
+              <p className="text-2xl font-bold text-white">
+                {formatBalance(yReserve)}
+              </p>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">K (Constant Product)</p>
-              <p className="text-lg font-semibold">{formatBalance(k)}</p>
+            <div className="bg-gradient-to-br from-pink-500/20 to-rose-500/20 backdrop-blur-sm p-6 rounded-2xl border border-pink-400/30 shadow-lg">
+              <p className="text-sm text-pink-300 font-medium mb-2">
+                K (Constant Product)
+              </p>
+              <p className="text-2xl font-bold text-white">
+                {formatBalance(k)}
+              </p>
             </div>
           </div>
         </div>
 
         {/* User Balances */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Your Balances</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">{tokenXInfo.symbol}</p>
-              <p className="text-lg font-semibold">
+        <div className="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-8 mb-8 border border-white/20 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10"></div>
+          <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent relative z-10">
+            Your Balances
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+            <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 backdrop-blur-sm p-6 rounded-2xl border border-blue-400/30 shadow-lg">
+              <p className="text-sm text-blue-300 font-medium mb-2">
+                {tokenXInfo.symbol}
+              </p>
+              <p className="text-2xl font-bold text-white">
                 {formatBalance(token1Balance)}
               </p>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">{tokenYInfo.symbol}</p>
-              <p className="text-lg font-semibold">
+            <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-sm p-6 rounded-2xl border border-green-400/30 shadow-lg">
+              <p className="text-sm text-green-300 font-medium mb-2">
+                {tokenYInfo.symbol}
+              </p>
+              <p className="text-2xl font-bold text-white">
                 {formatBalance(token2Balance)}
               </p>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">LP Tokens</p>
-              <p className="text-lg font-semibold">
+            <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-sm p-6 rounded-2xl border border-purple-400/30 shadow-lg">
+              <p className="text-sm text-purple-300 font-medium mb-2">
+                LP Tokens
+              </p>
+              <p className="text-2xl font-bold text-white">
                 {formatBalance(lpBalance)}
               </p>
             </div>
@@ -489,8 +560,9 @@ export default function SwapPage() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="bg-white rounded-lg shadow-md mb-8">
-          <div className="border-b border-gray-200">
+        <div className="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl mb-8 border border-white/20 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-purple-500/5 to-pink-500/5"></div>
+          <div className="border-b border-white/20 relative z-10">
             <nav className="flex space-x-8 px-6">
               {[
                 { id: "mint", label: "Mint Tokens" },
@@ -509,10 +581,10 @@ export default function SwapPage() {
                         | "removeLiquidity"
                     )
                   }
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-all duration-300 ${
                     activeTab === tab.id
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      ? "border-cyan-400 text-cyan-300 bg-gradient-to-r from-cyan-500/10 to-purple-500/10"
+                      : "border-transparent text-white/70 hover:text-white hover:border-white/30 hover:bg-white/5"
                   }`}
                 >
                   {tab.label}
@@ -521,14 +593,16 @@ export default function SwapPage() {
             </nav>
           </div>
 
-          <div className="p-6">
+          <div className="p-8 relative z-10">
             {/* Mint Tokens Tab */}
             {activeTab === "mint" && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Mint Test Tokens</h3>
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-6">
+                  Mint Test Tokens
+                </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-white/80 mb-2">
                       Select Token
                     </label>
                     <select
@@ -536,7 +610,7 @@ export default function SwapPage() {
                       onChange={(e) =>
                         setMintToken(e.target.value as "token1" | "token2")
                       }
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-4 border-2 border-white/20 rounded-2xl focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 bg-white/10 backdrop-blur-sm text-white"
                     >
                       <option value="token1">
                         {tokenXInfo.symbol} ({tokenXInfo.name})
@@ -547,7 +621,7 @@ export default function SwapPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-white/80 mb-2">
                       Amount to Mint
                     </label>
                     <input
@@ -555,7 +629,7 @@ export default function SwapPage() {
                       value={mintAmount}
                       onChange={(e) => setMintAmount(e.target.value)}
                       placeholder="Enter amount"
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border-2 border-white/20 rounded-2xl focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 bg-white/10 backdrop-blur-sm text-white placeholder-white/50"
                     />
                   </div>
                   <button
@@ -573,7 +647,7 @@ export default function SwapPage() {
                       });
                     }}
                     disabled={!mintAmount || isPending || isConfirming}
-                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white py-4 px-6 rounded-2xl hover:from-cyan-600 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isPending || isConfirming ? "Minting..." : "Mint Tokens"}
                   </button>
@@ -584,10 +658,12 @@ export default function SwapPage() {
             {/* Add Liquidity Tab */}
             {activeTab === "addLiquidity" && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Add Liquidity</h3>
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-6">
+                  Add Liquidity
+                </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-white/80 mb-2">
                       {tokenXInfo.symbol} Amount
                     </label>
                     <input
@@ -595,11 +671,11 @@ export default function SwapPage() {
                       value={xAmount}
                       onChange={(e) => setXAmount(e.target.value)}
                       placeholder="Enter amount"
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border-2 border-white/20 rounded-2xl focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 bg-white/10 backdrop-blur-sm text-white placeholder-white/50"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-white/80 mb-2">
                       {tokenYInfo.symbol} Amount
                       {k && k > 0n && xReserve && yReserve && (
                         <span className="text-xs text-red-500 ml-2 font-semibold">
@@ -617,14 +693,18 @@ export default function SwapPage() {
                       value={yAmount}
                       onChange={(e) => setYAmount(e.target.value)}
                       placeholder="Enter amount"
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full p-4 border-2 rounded-2xl focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 ${
+                        k && k > 0n && xReserve && yReserve
+                          ? "border-white/10 bg-white/5 text-white/60 cursor-not-allowed backdrop-blur-sm"
+                          : "border-white/20 bg-white/10 text-white placeholder-white/50 backdrop-blur-sm"
+                      }`}
                       readOnly={
                         k && k > 0n && xReserve && yReserve ? true : false
                       }
                     />
                     {k && k > 0n && xReserve && yReserve && (
-                      <div className="mt-2 p-3 bg-blue-50 rounded-md">
-                        <p className="text-sm text-gray-700 font-medium mb-1">
+                      <div className="mt-2 p-3 bg-cyan-500/10 backdrop-blur-sm rounded-2xl border border-cyan-400/30">
+                        <p className="text-sm text-white/80 font-medium mb-1">
                           Current Pool Ratio: {formatBalance(xReserve)}{" "}
                           {tokenXInfo.symbol} : {formatBalance(yReserve)}{" "}
                           {tokenYInfo.symbol}
@@ -648,7 +728,7 @@ export default function SwapPage() {
                     )}
                     {(!k || k === 0n) && (
                       <div className="mt-2 p-3 bg-green-50 rounded-md">
-                        <p className="text-sm text-gray-700 font-medium mb-1">
+                        <p className="text-sm text-white/80 font-medium mb-1">
                           🎉 First Liquidity Addition
                         </p>
                         <p className="text-sm text-gray-600">
@@ -661,7 +741,7 @@ export default function SwapPage() {
                   <button
                     onClick={handleAddLiquidity}
                     disabled={!xAmount || !yAmount || isPending || isConfirming}
-                    className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-4 px-6 rounded-2xl hover:from-green-600 hover:to-emerald-600 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isPending || isConfirming
                       ? "Adding Liquidity..."
@@ -674,10 +754,12 @@ export default function SwapPage() {
             {/* Swap Tab */}
             {activeTab === "swap" && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Swap Tokens</h3>
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-6">
+                  Swap Tokens
+                </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-white/80 mb-2">
                       Swap Direction
                     </label>
                     <select
@@ -685,7 +767,7 @@ export default function SwapPage() {
                       onChange={(e) =>
                         setSwapDirection(e.target.value as "xToY" | "yToX")
                       }
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border-2 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                     >
                       <option value="xToY">
                         {tokenXInfo.symbol} → {tokenYInfo.symbol}
@@ -696,7 +778,7 @@ export default function SwapPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-white/80 mb-2">
                       From Amount (
                       {swapDirection === "xToY"
                         ? tokenXInfo.symbol
@@ -708,11 +790,11 @@ export default function SwapPage() {
                       value={swapFromAmount}
                       onChange={(e) => setSwapFromAmount(e.target.value)}
                       placeholder="Enter amount"
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border-2 border-white/20 rounded-2xl focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 bg-white/10 backdrop-blur-sm text-white placeholder-white/50"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-white/80 mb-2">
                       To Amount (
                       {swapDirection === "xToY"
                         ? tokenYInfo.symbol
@@ -725,14 +807,14 @@ export default function SwapPage() {
                       readOnly
                       className="w-full p-3 border border-gray-300 rounded-md bg-gray-50"
                     />
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-white/60 mt-1">
                       Estimated output (includes 0.3% fee)
                     </p>
                   </div>
                   <button
                     onClick={handleSwap}
                     disabled={!swapFromAmount || isPending || isConfirming}
-                    className="w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 px-6 rounded-2xl hover:from-purple-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isPending || isConfirming ? "Swapping..." : "Swap Tokens"}
                   </button>
@@ -743,10 +825,12 @@ export default function SwapPage() {
             {/* Remove Liquidity Tab */}
             {activeTab === "removeLiquidity" && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Remove Liquidity</h3>
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent mb-6">
+                  Remove Liquidity
+                </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-white/80 mb-2">
                       LP Token Amount to Remove
                     </label>
                     <input
@@ -754,9 +838,9 @@ export default function SwapPage() {
                       value={removeAmount}
                       onChange={(e) => setRemoveAmount(e.target.value)}
                       placeholder="Enter amount"
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border-2 border-white/20 rounded-2xl focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 bg-white/10 backdrop-blur-sm text-white placeholder-white/50"
                     />
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-white/60 mt-1">
                       Your LP Balance: {formatBalance(lpBalance)}
                     </p>
                   </div>
@@ -771,7 +855,7 @@ export default function SwapPage() {
                       });
                     }}
                     disabled={!removeAmount || isPending || isConfirming}
-                    className="w-full bg-red-600 text-white py-3 px-4 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white py-4 px-6 rounded-2xl hover:from-red-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isPending || isConfirming
                       ? "Removing Liquidity..."

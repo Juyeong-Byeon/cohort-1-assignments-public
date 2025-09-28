@@ -1,6 +1,6 @@
 import { createConfig, http } from "wagmi";
 import { defineChain } from "viem";
-import { injected, metaMask, walletConnect } from "wagmi/connectors";
+import { injected, metaMask } from "wagmi/connectors";
 
 // Coston2 chain configuration
 export const coston2Chain = defineChain({
@@ -31,14 +31,7 @@ export const coston2Chain = defineChain({
 // Create wagmi config
 export const config = createConfig({
   chains: [coston2Chain],
-  connectors: [
-    injected(),
-    metaMask(),
-    walletConnect({
-      projectId:
-        process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "your-project-id",
-    }),
-  ],
+  connectors: [injected(), metaMask()],
   transports: {
     [coston2Chain.id]: http(),
   },
