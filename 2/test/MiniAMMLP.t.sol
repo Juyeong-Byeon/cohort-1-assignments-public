@@ -12,13 +12,21 @@ contract MiniAMMLPTest is Test {
 
     address public alice = address(0x1);
 
-    function setUp() public {
-        // Deploy mock tokens
-        token0 = new MockERC20("Token A", "TKA");
-        token1 = new MockERC20("Token B", "TKB");
+    // Fork testing addresses from broadcast
+    address constant FACTORY_ADDRESS = 0x4a9bbD62A8827117eE3391e9D8055d3D46a1A2E0;
+    address constant TOKEN1_ADDRESS = 0xFce9D7A78e11a22f465623f3295a8c52A0fb78b5;
+    address constant TOKEN2_ADDRESS = 0x472fFfB3d09c29B29D25dC5600cb570cAb8A4206;
+    address constant PAIR_ADDRESS = 0x01bfd0C9DA99536266a8df1CB1D039667A858b05;
+    uint256 constant FORK_BLOCK = 0x14dec00; // Block number from broadcast
 
-        // Deploy MiniAMM
-        miniAMM = new MiniAMM(address(token0), address(token1));
+    function setUp() public {
+        // Fork the blockchain at the specified block
+        vm.createFork("https://coston2-api.flare.network/ext/C/rpc", FORK_BLOCK);
+        
+        // Use deployed contracts from broadcast
+        miniAMM = MiniAMM(PAIR_ADDRESS);
+        token0 = MockERC20(TOKEN1_ADDRESS);
+        token1 = MockERC20(TOKEN2_ADDRESS);
 
         // Setup tokens for alice
         token0.freeMintTo(10000 * 10 ** 18, alice);
@@ -48,7 +56,6 @@ contract MiniAMMLPTest is Test {
         vm.prank(alice);
         uint256 lpMinted = miniAMM.addLiquidity(1000 * 10 ** 18, 2000 * 10 ** 18);
 
-        uint256 balanceBefore = miniAMM.balanceOf(alice);
         uint256 supplyBefore = miniAMM.totalSupply();
 
         // Then burn
